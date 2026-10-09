@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CDS Tracker | NYSC Rivers State</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead__inner">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">RV</span>
+        <div>
+          <h1 class="brand__title">CDS Tracker</h1>
+          <p class="brand__sub">NYSC Rivers State, Batch 2026B</p>
+        </div>
+      </div>
+      <div class="masthead__actions">
+        <button type="button" id="resetBtn" class="btn btn--on-dark">Reset sample data</button>
+        <button type="button" id="addBtn" class="btn btn--accent">Add corp member</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <section class="summary" id="summary" aria-label="Summary"></section>
+
+    <section class="panel" aria-label="Corp members">
+      <div class="toolbar">
+        <div class="field field--grow">
+          <label for="search">Search</label>
+          <input id="search" type="search" placeholder="Name, state code or LGA" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="filterCds">CDS group</label>
+          <select id="filterCds">
+            <option value="">All groups</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filterPay" id="filterPayLabel">Allowance this month</label>
+          <select id="filterPay">
+            <option value="">All</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="count" id="count" aria-live="polite"></p>
+
+      <div class="table-wrap">
+        <table id="membersTable">
+          <thead>
+            <tr>
+              <th scope="col">State code</th>
+              <th scope="col">Corp member</th>
+              <th scope="col">CDS group</th>
+              <th scope="col">Attendance, last 6 weeks</th>
+              <th scope="col">Clearance</th>
+              <th scope="col">Allowance</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="empty" id="empty" hidden></div>
+    </section>
+
+    <p class="footnote">
+      Select a week dot to mark it present, absent or not recorded. Select an allowance chip to switch it between paid and pending.
+      Records are saved in this browser only.
+    </p>
+  </main>
+
+  <!-- Add / edit dialog -->
+  <dialog id="formDialog" aria-labelledby="formTitle">
+    <form id="memberForm" novalidate>
+      <div class="dialog__head">
+        <h2 id="formTitle">Add corp member</h2>
+      </div>
+
+      <div class="dialog__body">
+        <div class="field field--full">
+          <label for="fullName">Full name</label>
+          <input id="fullName" name="fullName" type="text" autocomplete="off" aria-describedby="fullNameError" placeholder="First name and surname">
+          <p class="error" id="fullNameError"></p>
+        </div>
+
+        <fieldset class="field field--full fieldset" aria-describedby="genderError">
+          <legend>Gender</legend>
+          <div class="choices">
+            <label class="choice"><input type="radio" name="gender" value="Female"> Female</label>
+            <label class="choice"><input type="radio" name="gender" value="Male"> Male</label>
+          </div>
+          <p class="error" id="genderError"></p>
+        </fieldset>
+
+        <div class="field field--full">
+          <label for="codeNumber">State code</label>
+          <div class="code-input">
+            <span class="code-input__prefix" id="codePrefix"></span>
+            <input id="codeNumber" name="codeNumber" type="text" inputmode="numeric" maxlength="4" autocomplete="off" aria-describedby="codeHint codeNumberError">
+            <button type="button" class="btn btn--small" id="genCode">Generate</button>
+          </div>
+          <p class="hint" id="codeHint">Only the last number changes. Use 1 to 4 digits.</p>
+          <p class="error" id="codeNumberError"></p>
+        </div>
+
+        <div class="field">
+          <label for="lga">LGA of posting</label>
+          <select id="lga" name="lga" aria-describedby="lgaError">
+            <option value="">Select an LGA</option>
+          </select>
+          <p class="error" id="lgaError"></p>
+        </div>
+
+        <div class="field">
+          <label for="cds">CDS group</label>
+          <select id="cds" name="cds" aria-describedby="cdsError">
+            <option value="">Select a group</option>
+          </select>
+          <p class="error" id="cdsError"></p>
+        </div>
+
+        <div class="field field--full">
+          <label for="clearanceDate">Clearance date</label>
+          <input id="clearanceDate" name="clearanceDate" type="date" aria-describedby="clearanceDateError">
+          <p class="error" id="clearanceDateError"></p>
+        </div>
+
+        <fieldset class="field field--full fieldset">
+          <legend>Status</legend>
+          <div class="choices choices--stack">
+            <label class="choice"><input type="checkbox" name="cleared"> Clearance done</label>
+            <label class="choice"><input type="checkbox" name="paidCur"> <span id="paidCurLabel"></span></label>
+            <label class="choice"><input type="checkbox" name="paidPrev"> <span id="paidPrevLabel"></span></label>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="dialog__foot">
+        <button type="button" class="btn" id="cancelForm">Cancel</button>
+        <button type="submit" class="btn btn--primary" id="submitForm">Add member</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Confirm dialog (delete and reset) -->
+  <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+    <div class="dialog__head">
+      <h2 id="confirmTitle"></h2>
+    </div>
+    <div class="dialog__body dialog__body--single">
+      <p id="confirmMessage"></p>
+    </div>
+    <div class="dialog__foot">
+      <button type="button" class="btn" id="confirmCancel"></button>
+      <button type="button" class="btn btn--danger" id="confirmOk"></button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
